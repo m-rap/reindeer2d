@@ -5,10 +5,22 @@
 #ifndef COMPASS_CANVAS_H
 #define COMPASS_CANVAS_H
 
+#ifdef USE_GLES
+    #include <GLES/gl.h>
+    #include <GLES2/gl2.h>
+    #include <GLES2/gl2ext.h>
+#elif defined __APPLE__
+    #include <OpenGL/gl.h>
+#else
+    #include <GL/glew.h>
+    #ifdef _MSC_VER
+        #include <GL/wglew.h>
+    #endif
+    #include <GL/gl.h>
+#endif
+
 #ifdef __ANDROID_API__
 
-//#include <GLES2/gl2.h>
-#include <GLES/gl.h>
 
 #include <android/log.h>
 
@@ -16,10 +28,10 @@
 
 #else
 
-#include <GL/gl.h>
-#include <GLES2/gl2.h>
-#include <GLES2/gl2ext.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #define LOGI(...) (printf(__VA_ARGS__))
 

@@ -2,9 +2,33 @@
 // Created by Rian Prakoso on 7/30/20.
 //
 
-#include "Container.h"
+#include "EglContainer.h"
 
-int Container::initEgl() {
+
+int EglContainer_init(Container* container) {
+	((EglContainer*)container->derivedObj)->init();
+}
+
+int EglContainer_deinit(Container* container) {
+	((EglContainer*)container->derivedObj)->deinit();
+}
+
+void EglContainer_swapBuffers(Container* container) {
+	((EglContainer*)container->derivedObj)->swapBuffers();
+}
+
+
+void EglContainer_construct(EglContainer& eglContainer) {
+	Container_construct(eglContainer.parent);
+	eglContainer.parent.derivedObj = &eglContainer;
+	eglContainer.parent.init = EglContainer_init;
+	eglContainer.parent.deinit = EglContainer_deinit;
+	eglContainer.parent.swapBuffers = EglContainer_swapBuffers;
+}
+
+
+
+int EglContainer::initEgl() {
     LOGI("initEgl");
 
     const EGLint attribs[] = {
@@ -100,7 +124,7 @@ int Container::initEgl() {
     return 0;
 }
 
-int Container::deinitEgl() {
+int EglContainer::deinitEgl() {
     LOGI("deinitEgl %d", running);
     if (!running) {
         return 0;
@@ -126,8 +150,6 @@ int Container::deinitEgl() {
     return 0;
 }
 
-void Container::draw() {
-    canvas.draw();
-
+void EglContainer::swapBuffers() {
     eglSwapBuffers(display, surface);
 }

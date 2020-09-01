@@ -5,8 +5,6 @@
 #ifndef COMPASS_CONTAINER_H
 #define COMPASS_CONTAINER_H
 
-#include <EGL/egl.h>
-
 #ifdef __ANDROID_API__
 
 #include <android/log.h>
@@ -22,23 +20,22 @@
 #include "Canvas.h"
 
 struct Container {
-    EGLint width, height;
-    EGLSurface surface;
-    EGLContext context;
-    EGLDisplay display;
-    EGLNativeWindowType window;
-    //android_app* app;
+	void* derivedObj;
+	
     bool running;
     bool animating;
+    int width, height;
 
     Canvas canvas;
     float s1px;
-
-    int initEgl();
-    int deinitEgl();
-
+	
+	int (*init)(Container* container);
+    int (*deinit)(Container* container);
+    void (*swapBuffers)(Container* container);
+	
     void draw();
 };
 
+void Container_construct(Container& container);
 
 #endif //COMPASS_CONTAINER_H
