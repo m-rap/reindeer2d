@@ -16,7 +16,18 @@ target_include_directories(reindeer2d
     include
 )
 
+set(RDR_CFLAGS "-Wno-c++11-extensions")
+
+if (USE_EGL)
+    set(RDR_CFLAGS "${RDR_CFLAGS} -DUSE_EGL")
+endif()
+
+if (USE_GLES)
+    set(RDR_CFLAGS "${RDR_CFLAGS} -DUSE_GLES")
+endif()
+    
+
 set_target_properties(reindeer2d
     PROPERTIES COMPILE_FLAGS
-    "-Wno-c++11-extensions"
+    ${RDR_CFLAGS}
 )
