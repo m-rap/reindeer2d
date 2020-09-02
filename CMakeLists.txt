@@ -16,7 +16,7 @@ target_include_directories(reindeer2d
     include
 )
 
-set(RDR_CFLAGS "-Wno-c++11-extensions")
+set(RDR_CFLAGS "-Wno-writable-strings -Wno-c++11-extensions")
 
 if (USE_EGL)
     set(RDR_CFLAGS "${RDR_CFLAGS} -DUSE_EGL")
@@ -29,5 +29,29 @@ endif()
 
 set_target_properties(reindeer2d
     PROPERTIES COMPILE_FLAGS
-    ${RDR_CFLAGS}
+    "${RDR_CFLAGS}"
 )
+
+if (ANDROID_NDK)
+    add_library(reindeer2d-example
+        SHARED
+        examples/android-example.cpp
+    )
+    target_link_libraries(reindeer2d-example
+        reindeer2d
+        android
+        EGL
+        GLESv1_CM
+        log
+    )
+    
+    set_target_properties(reindeer2d-example
+        PROPERTIES COMPILE_FLAGS "${RDR_CFLAGS}"
+    )
+
+    set(EXAMPLE_LINK_FLAGS "-u ANativeActivity_onCreate")
+
+    set_target_properties(reindeer2d-example
+        PROPERTIES LINK_FLAGS "${EXAMPLE_LINK_FLAGS}"
+    )
+endif()
