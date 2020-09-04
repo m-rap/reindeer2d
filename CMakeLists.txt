@@ -5,26 +5,34 @@ project(reindeer2d)
 set(USE_GLES false CACHE BOOL "use gles")
 set(USE_EGL false CACHE BOOL "use egl")
 
-add_library(reindeer2d
-    STATIC
-    src/Canvas.cpp
-    src/Container.cpp
-)
-
-target_include_directories(reindeer2d
-    PUBLIC
-    include
+set(RDR_SRC
+    src/Canvas.c
+    src/Container.c
 )
 
 set(RDR_CFLAGS "-Wno-writable-strings -Wno-c++11-extensions")
 
 if (USE_EGL)
     set(RDR_CFLAGS "${RDR_CFLAGS} -DUSE_EGL")
+    set(RDR_SRC
+        ${RDR_SRC}
+        src/EglContainer.c
+    )
 endif()
 
 if (USE_GLES)
     set(RDR_CFLAGS "${RDR_CFLAGS} -DUSE_GLES")
 endif()
+
+add_library(reindeer2d
+    STATIC
+    ${RDR_SRC}
+)
+
+target_include_directories(reindeer2d
+    PUBLIC
+    include
+)
     
 
 set_target_properties(reindeer2d

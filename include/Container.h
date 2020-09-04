@@ -19,23 +19,21 @@
 
 #include "Canvas.h"
 
-struct Container {
-	void* derivedObj;
-	
-    bool running;
-    bool animating;
+struct SContainer {
+    uint8_t running;
+    uint8_t animating;
     int width, height;
 
     Canvas canvas;
     float s1px;
-	
-	int (*init)(Container* container);
+
+    int (*init)(Container* container);
     int (*deinit)(Container* container);
     void (*swapBuffers)(Container* container);
-	
-    void draw();
 };
 
-void Container_construct(Container& container);
+void createContainer(Container* container);
+
+void draw(Container* obj);
 
 #endif //COMPASS_CONTAINER_H

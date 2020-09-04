@@ -37,15 +37,19 @@
 
 #endif
 
-struct Vertex2 {
+typedef struct SVertex2 {
     float x, y, z;
     unsigned char r, g, b, a;
-};
+} Vertex2;
 
-struct Drawable {
+typedef struct SDrawable Drawable;
+
+struct SDrawable {
+    void* derived;
+
     GLenum mode;
-    Vertex2* vtxBuffer = NULL;
-    GLushort* idxBuffer = NULL;
+    Vertex2* vtxBuffer;
+    GLushort* idxBuffer;
     GLushort vtxBuffSize;
     GLushort idxBuffSize;
     unsigned char r, g, b, a;
@@ -54,7 +58,7 @@ struct Drawable {
     float scale;
     GLuint vbo;
     GLuint ibo;
-    bool initialized = false;
+    uint8_t initialized;
     //float lineWidth;
 
     Drawable* canvas;
@@ -62,49 +66,52 @@ struct Drawable {
     Drawable* children[1024];
     int childrenCount;
 
-    void init(Drawable* parent);
-    void setColor(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
-    void deinit();
-    void addVtx(float x, float y);
-    void addTriangle(int* idx);
-
-    void _rectvtx(float x, float y, float width, float height);
-    void _circlevtx(float x, float y, float r);
-
-    void _rectfill(float x, float y, float width, float height);
-    //void _rectstroke(float x1, float y1, float width, float height);
-    void _circlefill(float x1, float y1, float r);
-    //void _circlestroke(float x, float y, float r);
-
-    Drawable* addchild();
-    Drawable* rectfill(float x1, float y1, float width, float height);
-    Drawable* circlefill(float x1, float y1, float r);
-    //Drawable* rectstroke(float x1, float y1, float width, float height);
-    //Drawable* circlestroke(float x1, float y1, float r);
-
-    void end();
-
-    void draw();
+    
+    void (*deinit)(Drawable* this);
+    void (*draw)(Drawable* this);
 };
 
-struct Container;
+void createDrawable(Drawable* this);
 
-struct Canvas {
-    Drawable clzparent;
+void drawableInit(Drawable* this, Drawable* parent);
+
+void setColor(Drawable* this, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+void addVtx(Drawable* this, float x, float y);
+void addTriangle(Drawable* this, int* idx);
+
+void _rectvtx(Drawable* this, float x, float y, float width, float height);
+void _circlevtx(Drawable* this, float x, float y, float r);
+
+void _rectfill(Drawable* this, float x, float y, float width, float height);
+//void _rectstroke(Drawable* this, float x1, float y1, float width, float height);
+void _circlefill(Drawable* this, float x1, float y1, float r);
+//void _circlestroke(Drawable* this, float x, float y, float r);
+
+Drawable* addchild(Drawable* this);
+Drawable* rectfill(Drawable* this, float x1, float y1, float width, float height);
+Drawable* circlefill(Drawable* this, float x1, float y1, float r);
+//Drawable* rectstroke(Drawable* this, float x1, float y1, float width, float height);
+//Drawable* circlestroke(Drawable* this, float x1, float y1, float r);
+
+void end(Drawable* this);
+
+typedef struct SContainer Container;
+
+typedef struct SCanvas Canvas;
+
+struct SCanvas {
+    Drawable base;
 
     Container* container;
 
     float xscreen, yscreen, width, height;
     float small, big;
-    float alalay = 0;
-
-    void resize(int xscreen, int yscreen, int w, int h);
-
-    void init();
-    void deinit();
-
-    void draw();
+    //float alalay;
 };
 
+void createCanvas(Canvas* this);
+
+void canvasInit(Canvas* canvas);
+void resize(Canvas* this, int xscreen, int yscreen, int w, int h);
 
 #endif //COMPASS_CANVAS_H
