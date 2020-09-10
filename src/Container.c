@@ -16,6 +16,7 @@ void createContainer(Container* container) {
 }
 
 void Container_draw(Container* obj) {
+    //LOGI("inside Container_draw, container: %x canvas: %x", obj, &obj->canvas);
     Drawable_draw((Drawable*)&obj->canvas);
 
     obj->swapBuffers(obj);

@@ -3,8 +3,9 @@
 //
 
 #include "Canvas.h"
-#include <math.h>
 #include "Container.h"
+#include <math.h>
+#include <stdlib.h>
 
 
 Drawable* drawablePool;
@@ -73,6 +74,7 @@ void Drawable_init(Drawable* obj, Drawable* parent1) {
 }
 
 void _Drawable_draw(Drawable* obj) {
+    //LOGI("inside _Drawable_draw %x %d", obj, obj->childrenCount);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
@@ -81,6 +83,8 @@ void _Drawable_draw(Drawable* obj) {
     glScalef(obj->scale, obj->scale, obj->scale);
 
     if (obj->idxBuffSize > 0) {
+        //LOGI("drawing buffer %d", obj->vbo);
+
         //glLineWidth(lineWidth);
         glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
         glEnableClientState(GL_VERTEX_ARRAY);
@@ -97,7 +101,7 @@ void _Drawable_draw(Drawable* obj) {
     }
 
     for (int i = 0; i < obj->childrenCount; i++) {
-        obj->draw(obj->children[i]);
+        obj->children[i]->draw(obj->children[i]);
     }
 
     glMatrixMode(GL_MODELVIEW);
@@ -122,6 +126,7 @@ void Drawable_draw(Drawable* obj) {
 }
 
 void Drawable_setColor(Drawable* obj, unsigned char r1, unsigned char g1, unsigned char b1, unsigned char a1) {
+    //LOGI("Drawable %x color: %d,%d,%d,%d", obj, r1, g1, b1, a1);
     obj->r = r1;
     obj->g = g1;
     obj->b = b1;
@@ -138,6 +143,10 @@ void Drawable_addVtx(Drawable* obj, float x, float y) {
         .a = obj->a
     };
     obj->vtxBuffer[obj->vtxBuffSize++] = tmp;
+
+    //int n = obj->vtxBuffSize - 1;
+    //Vertex2* v = &obj->vtxBuffer[n];
+    //LOGI("%f %f %f %d %d %d %d", v->x, v->y, v->z, v->r, v->g, v->b, v->a);
 }
 
 void Drawable_addTriangle(Drawable* obj, int* idx) {
@@ -200,10 +209,14 @@ void _circlefill(Drawable* obj, float x1, float y1, float radius) {
     obj->idxBuffer = (GLushort*)malloc(sizeof(GLushort) * (nSegments + 1));
 
     GLushort idxStart = obj->vtxBuffSize - nSegments - 1;
+    //char idxStr[2000] = "";
     for (GLushort i = 0; i < nSegments; i++) {
         obj->idxBuffer[obj->idxBuffSize++] = idxStart + i;
+        //sprintf(idxStr, "%s %d", idxStr, obj->idxBuffer[obj->idxBuffSize - 1]);
     }
     obj->idxBuffer[obj->idxBuffSize++] = idxStart + 1;
+    //sprintf(idxStr, "%s %d", idxStr, obj->idxBuffer[obj->idxBuffSize - 1]);
+    //LOGI("%s", idxStr);
     //LOGI("_circlefill %d", obj->idxBuffSize);
 }
 
@@ -239,6 +252,7 @@ Drawable* Drawable_addchild(Drawable* obj) {
         return NULL;
     }
     Drawable* d = obj->children[obj->childrenCount++] = &drawablePool[takenDrawableCount++];
+    createDrawable(d);
     Drawable_init(d, obj);
     return d;
 }
@@ -269,7 +283,7 @@ Drawable* Drawable_circlefill(Drawable* obj, float x1, float y1, float radius) {
 
 void Drawable_end(Drawable* obj) {
     //LOGI("taken %d", takenDrawableCount);
-    //LOGI("bufferdata %d %d", vtxBuffSize, idxBuffSize);
+    LOGI("bufferdata %d %d", obj->vtxBuffSize, obj->idxBuffSize);
     glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
     glBufferData(GL_ARRAY_BUFFER, obj->vtxBuffSize * sizeof(Vertex2), obj->vtxBuffer, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -297,17 +311,19 @@ void Canvas_init(Canvas* obj) {
 }
 
 void _Canvas_deinit(Drawable* obj) {
-    Drawable_deinit(obj);
+    _Drawable_deinit(obj);
     takenDrawableCount = 0;
 
     free(drawablePool);
 }
 
 void _Canvas_draw(Drawable* obj) {
+    //LOGI("inside _Canvas_draw %x", obj);
+
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0, 0, 0, 0);
 
-    Drawable_draw(obj);
+    _Drawable_draw(obj);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -335,6 +351,7 @@ void Canvas_resize(Canvas* obj, int xscreen1, int yscreen1, int w, int h) {
         //LOGI("layout same");
         return;
     }
+
     obj->xscreen = xscreen1;
     obj->yscreen = yscreen1;
     obj->width = w;
@@ -356,4 +373,6 @@ void Canvas_resize(Canvas* obj, int xscreen1, int yscreen1, int w, int h) {
     //glViewport(xscreen, yscreen + big / 2 - small / 2, small, small);
     glViewport(obj->xscreen, obj->big / 2 - obj->small / 2 + (obj->container->height - obj->big - obj->yscreen), obj->small, obj->small);
     //alalay += 0.1;
+
+    LOGI("layout changed %f %f %f %f", obj->xscreen, obj->big / 2 - obj->small / 2 + (obj->container->height - obj->big - obj->yscreen), obj->small, obj->small);
 }

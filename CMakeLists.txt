@@ -50,6 +50,7 @@ if (ANDROID_NDK)
     add_library(reindeer2d-example
         SHARED
         examples/android-example.cpp
+        ${ANDROID_NDK_SRC}/android/native_app_glue/android_native_app_glue.c
     )
     target_include_directories(reindeer2d-example PUBLIC
         ${ANDROID_NDK_SRC}/android/native_app_glue)

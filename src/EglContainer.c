@@ -11,7 +11,7 @@ int _EglContainer_deinit(Container* obj);
 
 void _EglContainer_swapBuffers(Container* obj);
 
-void createEglContainer(EglContainer* container, EGLNativeWindowType window) {
+void createEglContainer(EglContainer* container, void* extData) {
     if (container == NULL) {
         return;
     }
@@ -20,15 +20,15 @@ void createEglContainer(EglContainer* container, EGLNativeWindowType window) {
 
     createContainer(&container->base);
 
-    container->window = window;
-    container->display = EGL_NO_DISPLAY;
-    container->context = EGL_NO_CONTEXT;
-    container->surface = EGL_NO_SURFACE;
-
     container->base.derived = container;
     container->base.init = _EglContainer_init;
     container->base.deinit = _EglContainer_deinit;
     container->base.swapBuffers = _EglContainer_swapBuffers;
+
+    container->extData = extData;
+    container->display = EGL_NO_DISPLAY;
+    container->context = EGL_NO_CONTEXT;
+    container->surface = EGL_NO_SURFACE;
 }
 
 int _EglContainer_init(Container* obj) {

@@ -13,11 +13,18 @@ Drawable* compass = NULL;
 
 void constructDraw(Container* container1) {
     Drawable* canvas = (Drawable*)&container1->canvas;
+    LOGI("constructDraw, canvas: %x", canvas);
     container1->s1px = 1 / ((Canvas*)canvas->derived)->small;
     float s1px = container1->s1px;
     //float linewidth = 10 * s1px;
     float linewidth = 0.01;
     LOGI("s1px %f linewidth %f", s1px, linewidth);
+
+    //Drawable_setColor(canvas, 255, 0, 0, 255);
+    //Drawable_circlefill(canvas, 0, 0, 0.83);
+
+    //Drawable_setColor(canvas, 0, 255, 0, 255);
+    //Drawable_rectfill(canvas, 0, 0, 0.5, 0.5);
 
     Drawable_setColor(canvas, 50, 50, 50, 255);
     Drawable_circlefill(canvas, 0, 0, 0.83);
@@ -101,7 +108,9 @@ void engine_handle_cmd(struct android_app* app, int32_t cmd) {
         case APP_CMD_SAVE_STATE:
             break;
         case APP_CMD_INIT_WINDOW:
-            if (container1->window != NULL) {
+            LOGI("APP_CMD_INIT_WINDOW %x", container1->window);
+            if (((struct android_app*)container1->extData)->window != NULL) {
+                container1->window = ((struct android_app*)container1->extData)->window;
                 Container_init(container12);
                 constructDraw(container12);
             }
@@ -128,7 +137,7 @@ void android_main(struct android_app* state) {
     timeval start;
     gettimeofday(&start, NULL);
 
-    createEglContainer(&container, state->window);
+    createEglContainer(&container, state);
 
     state->userData = &container;
     state->onAppCmd = engine_handle_cmd;
@@ -179,8 +188,9 @@ void android_main(struct android_app* state) {
             fps = 0;
         }
 
+        //LOGI("running %d animating %d", container2.running, container2.animating);
         if (container2.running && container2.animating) {
-            compass->rotation += 0.01;
+            //compass->rotation += 0.01;
             Container_draw(&container2);
         }
 

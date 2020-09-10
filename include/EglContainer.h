@@ -32,6 +32,7 @@ struct SEglContainer {
     EGLContext context;
     EGLDisplay display;
     EGLNativeWindowType window;
+    void* extData;
     //android_app* app;
 };
 
@@ -39,7 +40,7 @@ struct SEglContainer {
 extern "C" {
 #endif
 
-void createEglContainer(EglContainer* container, EGLNativeWindowType window);
+void createEglContainer(EglContainer* container, void* extData);
 
 #ifdef __cplusplus
 }
