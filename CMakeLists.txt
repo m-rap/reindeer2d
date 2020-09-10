@@ -16,7 +16,7 @@ set(RDR_SRC
     src/Container.c
 )
 
-set(RDR_CFLAGS "-Wno-writable-strings -Wno-c++11-extensions")
+set(RDR_CFLAGS "-Wno-writable-strings -Wno-c++11-extensions -fPIC")
 
 if (USE_EGL)
     set(RDR_CFLAGS "${RDR_CFLAGS} -DUSE_EGL")
@@ -49,7 +49,8 @@ set_target_properties(reindeer2d
 if (ANDROID_NDK)
     add_library(reindeer2d-example
         SHARED
-        examples/android-example.cpp
+        #examples/android-example.cpp
+        examples/android-example.c
         ${ANDROID_NDK_SRC}/android/native_app_glue/android_native_app_glue.c
     )
     target_include_directories(reindeer2d-example PUBLIC

@@ -6,6 +6,7 @@
 #include <string.h>
 #include <dlfcn.h>
 #include <math.h>
+#include <stdlib.h>
 #include <android_native_app_glue.h>
 
 EglContainer container;
@@ -119,10 +120,10 @@ void engine_handle_cmd(struct android_app* app, int32_t cmd) {
             Container_deinit(container12);
             break;
         case APP_CMD_GAINED_FOCUS:
-            container12->animating = true;
+            container12->animating = 1;
             break;
         case APP_CMD_LOST_FOCUS:
-            container12->animating = false;
+            container12->animating = 0;
             break;
         default:
             break;
@@ -134,7 +135,7 @@ void android_main(struct android_app* state) {
     LOGI("android_main");
 
     int secDiff = 0, prevSecDiff = 0;
-    timeval start;
+    struct timeval start;
     gettimeofday(&start, NULL);
 
     createEglContainer(&container, state);
@@ -145,15 +146,15 @@ void android_main(struct android_app* state) {
     int fps = 0;
 
     LOGI("to loop");
-    Container& container2 = *((Container*)&container);
+    Container* container2 = (Container*)&container;
 
-    while (true) {
+    while (1) {
         int ident;
         int events;
         struct android_poll_source* source;
 
 
-        timeval now;
+        struct timeval now;
         gettimeofday(&now, NULL);
         secDiff = now.tv_sec - start.tv_sec;
 
@@ -172,7 +173,7 @@ void android_main(struct android_app* state) {
 
             if (state->destroyRequested != 0) {
                 LOGI("destroyRequested");
-                Container_deinit(&container2);
+                Container_deinit(container2);
                 break;
             }
         }
@@ -188,10 +189,10 @@ void android_main(struct android_app* state) {
             fps = 0;
         }
 
-        //LOGI("running %d animating %d", container2.running, container2.animating);
-        if (container2.running && container2.animating) {
+        //LOGI("running %d animating %d", container2->running, container2->animating);
+        if (container2->running && container2->animating) {
             //compass->rotation += 0.01;
-            Container_draw(&container2);
+            Container_draw(container2);
         }
 
         fps++;
