@@ -20,6 +20,8 @@
 #include "Canvas.h"
 
 struct SContainer {
+    void* derived;
+
     uint8_t running;
     uint8_t animating;
     int width, height;
@@ -27,13 +29,24 @@ struct SContainer {
     Canvas canvas;
     float s1px;
 
-    int (*init)(Container* container);
-    int (*deinit)(Container* container);
-    void (*swapBuffers)(Container* container);
+    int (*init)(Container* obj);
+    int (*deinit)(Container* obj);
+    void (*swapBuffers)(Container* obj);
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void createContainer(Container* container);
 
-void draw(Container* obj);
+void Container_draw(Container* obj);
+void Container_init(Container* obj);
+void Container_deinit(Container* obj);
+void Container_swapBuffers(Container* obj);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //COMPASS_CONTAINER_H

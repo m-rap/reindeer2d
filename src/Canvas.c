@@ -12,183 +12,199 @@ int takenDrawableCount = 0;
 GLushort nSegments = 200;
 
 
-void Drawable_deinit(Drawable* this) {
-    //LOGI("drawable deinit %08x %d %d", this, initialized, childrenCount);
-    if (this->initialized) {
-        this->initialized = 0;
+//void _rectvtx(Drawable* obj, float x, float y, float width, float height);
+//void _circlevtx(Drawable* obj, float x, float y, float r);
 
-        if (this->vtxBuffer != NULL) {
-            free(this->vtxBuffer);
-        }
-        if (this->idxBuffer != NULL) {
-            free(this->idxBuffer);
-        }
-        glDeleteBuffers(1, &this->vbo);
-        glDeleteBuffers(1, &this->ibo);
+//void _rectfill(Drawable* obj, float x, float y, float width, float height);
+////void _rectstroke(Drawable* obj, float x1, float y1, float width, float height);
+//void _circlefill(Drawable* obj, float x1, float y1, float r);
+////void _circlestroke(Drawable* obj, float x, float y, float r);
 
-        for (int i = 0; i < this->childrenCount; i++) {
-            this->children[i]->deinit(this->children[i]);
+
+void _Drawable_deinit(Drawable* obj) {
+    //LOGI("drawable deinit %08x %d %d", obj, initialized, childrenCount);
+    if (obj->initialized) {
+        obj->initialized = 0;
+
+        if (obj->vtxBuffer != NULL) {
+            free(obj->vtxBuffer);
         }
-        this->childrenCount = 0;
+        if (obj->idxBuffer != NULL) {
+            free(obj->idxBuffer);
+        }
+        glDeleteBuffers(1, &obj->vbo);
+        glDeleteBuffers(1, &obj->ibo);
+
+        for (int i = 0; i < obj->childrenCount; i++) {
+            obj->children[i]->deinit(obj->children[i]);
+        }
+        obj->childrenCount = 0;
     }
 }
 
-void drawableInit(Drawable* this, Drawable* parent1) {
+void Drawable_init(Drawable* obj, Drawable* parent1) {
     //LOGI("drawable init");
-    this->initialized = 1;
+    obj->initialized = 1;
 
-    this->childrenCount = 0;
+    obj->childrenCount = 0;
 
-    glGenBuffers(1, &this->vbo);
-    glGenBuffers(1, &this->ibo);
+    glGenBuffers(1, &obj->vbo);
+    glGenBuffers(1, &obj->ibo);
 
-    this->vtxBuffSize = 0;
-    this->idxBuffSize = 0;
-    this->x = 0;
-    this->y = 0;
-    this->rotation = 0;
-    this->scale = 1;
-    //this->lineWidth = 1;
-    this->parent = parent1;
+    obj->vtxBuffSize = 0;
+    obj->idxBuffSize = 0;
+    obj->x = 0;
+    obj->y = 0;
+    obj->rotation = 0;
+    obj->scale = 1;
+    //obj->lineWidth = 1;
+    obj->parent = parent1;
 
-    Drawable* tmp = this;
+    Drawable* tmp = obj;
     while (tmp != NULL) {
         if (tmp->parent == NULL) {
-            this->canvas = tmp;
+            obj->canvas = tmp;
             break;
         }
         tmp = tmp->parent;
     }
-    setColor(this, this->canvas->r, this->canvas->g, this->canvas->b, this->canvas->a);
-    //this->lineWidth = this->canvas->lineWidth;
+    Drawable_setColor(obj, obj->canvas->r, obj->canvas->g, obj->canvas->b, obj->canvas->a);
+    //obj->lineWidth = obj->canvas->lineWidth;
 }
 
-void Drawable_draw(Drawable* this) {
+void _Drawable_draw(Drawable* obj) {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
-    glTranslatef(this->x, this->y, 0);
-    glRotatef(this->rotation, 0, 0, 1);
-    glScalef(this->scale, this->scale, this->scale);
+    glTranslatef(obj->x, obj->y, 0);
+    glRotatef(obj->rotation, 0, 0, 1);
+    glScalef(obj->scale, obj->scale, obj->scale);
 
-    if (this->idxBuffSize > 0) {
+    if (obj->idxBuffSize > 0) {
         //glLineWidth(lineWidth);
-        glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
         glEnableClientState(GL_VERTEX_ARRAY);
         glEnableClientState(GL_COLOR_ARRAY);
 
         glVertexPointer(3, GL_FLOAT, sizeof(Vertex2), (void*)offsetof(Vertex2, x));
         glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(Vertex2), (void*)offsetof(Vertex2, r));
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ibo);
-        glDrawElements(this->mode, this->idxBuffSize, GL_UNSIGNED_SHORT, 0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ibo);
+        glDrawElements(obj->mode, obj->idxBuffSize, GL_UNSIGNED_SHORT, 0);
 
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
     }
 
-    for (int i = 0; i < this->childrenCount; i++) {
-        this->draw(this->children[i]);
+    for (int i = 0; i < obj->childrenCount; i++) {
+        obj->draw(obj->children[i]);
     }
 
     glMatrixMode(GL_MODELVIEW);
     glPopMatrix();
 }
 
-void createDrawable(Drawable* this) {
-    if (this == NULL)
+void createDrawable(Drawable* obj) {
+    if (obj == NULL)
         return;
     
-    memset(this, 0, sizeof(Drawable));
-    //this->init = Drawable_init;
-    this->deinit = Drawable_deinit;
-    this->draw = Drawable_draw;
+    memset(obj, 0, sizeof(Drawable));
+    obj->deinit = _Drawable_deinit;
+    obj->draw = _Drawable_draw;
 }
 
-void setColor(Drawable* this, unsigned char r1, unsigned char g1, unsigned char b1, unsigned char a1) {
-    this->r = r1;
-    this->g = g1;
-    this->b = b1;
-    this->a = a1;
+void Drawable_deinit(Drawable* obj) {
+    obj->deinit(obj);
 }
 
-void addVtx(Drawable* this, float x, float y) {
+void Drawable_draw(Drawable* obj) {
+    obj->draw(obj);
+}
+
+void Drawable_setColor(Drawable* obj, unsigned char r1, unsigned char g1, unsigned char b1, unsigned char a1) {
+    obj->r = r1;
+    obj->g = g1;
+    obj->b = b1;
+    obj->a = a1;
+}
+
+void Drawable_addVtx(Drawable* obj, float x, float y) {
     Vertex2 tmp = {
         .x = x,
         .y = y,
-        .r = this->r,
-        .g = this->g,
-        .b = this->b,
-        .a = this->a
+        .r = obj->r,
+        .g = obj->g,
+        .b = obj->b,
+        .a = obj->a
     };
-    this->vtxBuffer[this->vtxBuffSize++] = tmp;
+    obj->vtxBuffer[obj->vtxBuffSize++] = tmp;
 }
 
-void addTriangle(Drawable* this, int* idx) {
-    if (this->idxBuffSize > 1024 - 3) {
+void Drawable_addTriangle(Drawable* obj, int* idx) {
+    if (obj->idxBuffSize > 1024 - 3) {
         return;
     }
-    this->idxBuffer[this->idxBuffSize++] = idx[0];
-    this->idxBuffer[this->idxBuffSize++] = idx[1];
-    this->idxBuffer[this->idxBuffSize++] = idx[2];
+    obj->idxBuffer[obj->idxBuffSize++] = idx[0];
+    obj->idxBuffer[obj->idxBuffSize++] = idx[1];
+    obj->idxBuffer[obj->idxBuffSize++] = idx[2];
 }
 
-void _rectvtx(Drawable* this, float x1, float y1, float width, float height) {
+void _rectvtx(Drawable* obj, float x1, float y1, float width, float height) {
     //LOGI("_rectvtx");
-    this->x = x1;
-    this->y = y1;
+    obj->x = x1;
+    obj->y = y1;
 
-    this->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * 4);
+    obj->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * 4);
 
-    addVtx(this, -width / 2, -height / 2);
-    addVtx(this, width / 2, -height / 2);
-    addVtx(this, width / 2, height / 2);
-    addVtx(this, -width / 2, height / 2);
+    Drawable_addVtx(obj, -width / 2, -height / 2);
+    Drawable_addVtx(obj, width / 2, -height / 2);
+    Drawable_addVtx(obj, width / 2, height / 2);
+    Drawable_addVtx(obj, -width / 2, height / 2);
 }
 
-void _circlevtx(Drawable* this, float x1, float y1, float radius) {
+void _circlevtx(Drawable* obj, float x1, float y1, float radius) {
     //LOGI("_circlevtx");
-    this->x = x1;
-    this->y = y1;
+    obj->x = x1;
+    obj->y = y1;
 
-    this->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * (nSegments + 1));
+    obj->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * (nSegments + 1));
 
-    addVtx(this, 0, 0);
+    Drawable_addVtx(obj, 0, 0);
     for (int i = 0; i < nSegments; i++) {
         double degree = (double)(i * 360) / nSegments;
         double radians = degree * M_PI / 180;
-        addVtx(this, (float)(cos(radians) * radius), (float)(sin(radians) * radius));
+        Drawable_addVtx(obj, (float)(cos(radians) * radius), (float)(sin(radians) * radius));
     }
 }
 
-void _rectfill(Drawable* this, float x1, float y1, float width, float height) {
-    _rectvtx(this, x1, y1, width, height);
+void _rectfill(Drawable* obj, float x1, float y1, float width, float height) {
+    _rectvtx(obj, x1, y1, width, height);
 
-    this->mode = GL_TRIANGLES;
+    obj->mode = GL_TRIANGLES;
 
-    this->idxBuffer = (GLushort*)malloc(sizeof(GLushort) * 6);
+    obj->idxBuffer = (GLushort*)malloc(sizeof(GLushort) * 6);
 
-    int idx1[] = {this->vtxBuffSize - (GLushort)4, this->vtxBuffSize - (GLushort)3, this->vtxBuffSize - (GLushort)2};
-    addTriangle(this, idx1);
+    int idx1[] = {obj->vtxBuffSize - (GLushort)4, obj->vtxBuffSize - (GLushort)3, obj->vtxBuffSize - (GLushort)2};
+    Drawable_addTriangle(obj, idx1);
 
-    int idx2[] = {this->vtxBuffSize - (GLushort)4, this->vtxBuffSize - (GLushort)2, this->vtxBuffSize - (GLushort)1};
-    addTriangle(this, idx2);
-    //LOGI("_rectfill %d", this->idxBuffSize);
+    int idx2[] = {obj->vtxBuffSize - (GLushort)4, obj->vtxBuffSize - (GLushort)2, obj->vtxBuffSize - (GLushort)1};
+    Drawable_addTriangle(obj, idx2);
+    //LOGI("_rectfill %d", obj->idxBuffSize);
 }
 
-void _circlefill(Drawable* this, float x1, float y1, float radius) {
-    _circlevtx(this, x1, y1, radius);
+void _circlefill(Drawable* obj, float x1, float y1, float radius) {
+    _circlevtx(obj, x1, y1, radius);
 
-    this->mode = GL_TRIANGLE_FAN;
+    obj->mode = GL_TRIANGLE_FAN;
 
-    this->idxBuffer = (GLushort*)malloc(sizeof(GLushort) * (nSegments + 1));
+    obj->idxBuffer = (GLushort*)malloc(sizeof(GLushort) * (nSegments + 1));
 
-    GLushort idxStart = this->vtxBuffSize - nSegments - 1;
+    GLushort idxStart = obj->vtxBuffSize - nSegments - 1;
     for (GLushort i = 0; i < nSegments; i++) {
-        this->idxBuffer[this->idxBuffSize++] = idxStart + i;
+        obj->idxBuffer[obj->idxBuffSize++] = idxStart + i;
     }
-    this->idxBuffer[this->idxBuffSize++] = idxStart + 1;
-    //LOGI("_circlefill %d", this->idxBuffSize);
+    obj->idxBuffer[obj->idxBuffSize++] = idxStart + 1;
+    //LOGI("_circlefill %d", obj->idxBuffSize);
 }
 
 //void Drawable::_rectstroke(float x1, float y1, float width, float height) {
@@ -218,60 +234,60 @@ void _circlefill(Drawable* this, float x1, float y1, float radius) {
 //    }
 //}
 
-Drawable* addchild(Drawable* this) {
+Drawable* Drawable_addchild(Drawable* obj) {
     if (takenDrawableCount >= 1024) {
         return NULL;
     }
-    Drawable* d = this->children[this->childrenCount++] = &drawablePool[takenDrawableCount++];
-    drawableInit(d, this);
+    Drawable* d = obj->children[obj->childrenCount++] = &drawablePool[takenDrawableCount++];
+    Drawable_init(d, obj);
     return d;
 }
 
-Drawable* rectfill(Drawable* this, float x1, float y1, float width, float height) {
-    Drawable* d = addchild(this);
+Drawable* Drawable_rectfill(Drawable* obj, float x1, float y1, float width, float height) {
+    Drawable* d = Drawable_addchild(obj);
     _rectfill(d, x1, y1, width, height);
     return d;
 }
 
-Drawable* circlefill(Drawable* this, float x1, float y1, float radius) {
-    Drawable* d = addchild(this);
+Drawable* Drawable_circlefill(Drawable* obj, float x1, float y1, float radius) {
+    Drawable* d = Drawable_addchild(obj);
     _circlefill(d, x1, y1, radius);
     return d;
 }
 
 //Drawable* Drawable::rectstroke(float x1, float y1, float width, float height) {
-//    Drawable* d = addchild();
+//    Drawable* d = Drawable_addchild();
 //    d->_rectstroke(x1, y1, width, height);
 //    return d;
 //}
 //
 //Drawable* Drawable::circlestroke(float x1, float y1, float radius) {
-//    Drawable* d = addchild();
+//    Drawable* d = Drawable_addchild();
 //    d->_circlestroke(x1, y1, radius);
 //    return d;
 //}
 
-void end(Drawable* this) {
+void Drawable_end(Drawable* obj) {
     //LOGI("taken %d", takenDrawableCount);
     //LOGI("bufferdata %d %d", vtxBuffSize, idxBuffSize);
-    glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
-    glBufferData(GL_ARRAY_BUFFER, this->vtxBuffSize * sizeof(Vertex2), this->vtxBuffer, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, obj->vbo);
+    glBufferData(GL_ARRAY_BUFFER, obj->vtxBuffSize * sizeof(Vertex2), obj->vtxBuffer, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->idxBuffSize * sizeof(GLushort), this->idxBuffer, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->idxBuffSize * sizeof(GLushort), obj->idxBuffer, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
-    for (int i = 0; i < this->childrenCount; i++) {
-        end(this->children[i]);
+    for (int i = 0; i < obj->childrenCount; i++) {
+        Drawable_end(obj->children[i]);
     }
 }
 
-void canvasInit(Canvas* this) {
+void Canvas_init(Canvas* obj) {
     drawablePool = (Drawable*)malloc(sizeof(Drawable) * 1024);
 
     LOGI("canvas init");
-    drawableInit(&this->base, NULL);
+    Drawable_init(&obj->base, NULL);
     takenDrawableCount = 0;
 
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
@@ -280,18 +296,18 @@ void canvasInit(Canvas* this) {
     glDisable(GL_DEPTH_TEST);
 }
 
-void Canvas_deinit(Drawable* this) {
-    Drawable_deinit(this);
+void _Canvas_deinit(Drawable* obj) {
+    Drawable_deinit(obj);
     takenDrawableCount = 0;
 
     free(drawablePool);
 }
 
-void Canvas_draw(Drawable* this) {
+void _Canvas_draw(Drawable* obj) {
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0, 0, 0, 0);
 
-    Drawable_draw(this);
+    Drawable_draw(obj);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -305,29 +321,29 @@ void createCanvas(Canvas* canvas) {
     createDrawable(&canvas->base);
     canvas->base.derived = canvas;
     //canvas->base.init = Canvas_init;
-    canvas->base.deinit = Canvas_deinit;
-    canvas->base.draw = Canvas_draw;
+    canvas->base.deinit = _Canvas_deinit;
+    canvas->base.draw = _Canvas_draw;
 }
 
-void resize(Canvas* this, int xscreen1, int yscreen1, int w, int h) {
+void Canvas_resize(Canvas* obj, int xscreen1, int yscreen1, int w, int h) {
     //LOGI("layout %f %f %f %f", xscreen, yscreen, width, height);
     //LOGI("viewport %f %f %f %f", xscreen, yscreen + big / 2 - small / 2, small, small);
-    if (this->xscreen == (float)xscreen1 &&
-        this->yscreen == (float)yscreen1 &&
-        this->width   == (float)w &&
-        this->height  == (float)h) {
+    if (obj->xscreen == (float)xscreen1 &&
+        obj->yscreen == (float)yscreen1 &&
+        obj->width   == (float)w &&
+        obj->height  == (float)h) {
         //LOGI("layout same");
         return;
     }
-    this->xscreen = xscreen1;
-    this->yscreen = yscreen1;
-    this->width = w;
-    this->height = h;
-    this->small = this->width;
-    this->big = this->height;
-    if (this->height < this->width) {
-        this->small = this->height;
-        this->big = this->width;
+    obj->xscreen = xscreen1;
+    obj->yscreen = yscreen1;
+    obj->width = w;
+    obj->height = h;
+    obj->small = obj->width;
+    obj->big = obj->height;
+    if (obj->height < obj->width) {
+        obj->small = obj->height;
+        obj->big = obj->width;
     }
     //glViewport(0, big/4 - (container->height - big) - (0.005 * small), small, small);
     //glViewport(0, big/4 - (container->height - big), small, small);
@@ -338,6 +354,6 @@ void resize(Canvas* this, int xscreen1, int yscreen1, int w, int h) {
     //glViewport(0, container->height / 4 + container->s1px * (container->height - big), small, small);
     //glViewport(0, container->height / 4, small, small);
     //glViewport(xscreen, yscreen + big / 2 - small / 2, small, small);
-    glViewport(this->xscreen, this->big / 2 - this->small / 2 + (this->container->height - this->big - this->yscreen), this->small, this->small);
+    glViewport(obj->xscreen, obj->big / 2 - obj->small / 2 + (obj->container->height - obj->big - obj->yscreen), obj->small, obj->small);
     //alalay += 0.1;
 }

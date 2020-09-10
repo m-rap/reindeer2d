@@ -67,33 +67,35 @@ struct SDrawable {
     int childrenCount;
 
     
-    void (*deinit)(Drawable* this);
-    void (*draw)(Drawable* this);
+    void (*deinit)(Drawable* obj);
+    void (*draw)(Drawable* obj);
 };
 
-void createDrawable(Drawable* this);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void drawableInit(Drawable* this, Drawable* parent);
+void createDrawable(Drawable* obj);
 
-void setColor(Drawable* this, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
-void addVtx(Drawable* this, float x, float y);
-void addTriangle(Drawable* this, int* idx);
+void Drawable_init(Drawable* obj, Drawable* parent);
+void Drawable_deinit(Drawable* obj);
+void Drawable_draw(Drawable* obj);
 
-void _rectvtx(Drawable* this, float x, float y, float width, float height);
-void _circlevtx(Drawable* this, float x, float y, float r);
+void Drawable_setColor(Drawable* obj, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+void Drawable_addVtx(Drawable* obj, float x, float y);
+void Drawable_addTriangle(Drawable* obj, int* idx);
 
-void _rectfill(Drawable* this, float x, float y, float width, float height);
-//void _rectstroke(Drawable* this, float x1, float y1, float width, float height);
-void _circlefill(Drawable* this, float x1, float y1, float r);
-//void _circlestroke(Drawable* this, float x, float y, float r);
+Drawable* Drawable_addchild(Drawable* obj);
+Drawable* Drawable_rectfill(Drawable* obj, float x1, float y1, float width, float height);
+Drawable* Drawable_circlefill(Drawable* obj, float x1, float y1, float r);
+//Drawable* Drawable_rectstroke(Drawable* obj, float x1, float y1, float width, float height);
+//Drawable* Drawable_circlestroke(Drawable* obj, float x1, float y1, float r);
 
-Drawable* addchild(Drawable* this);
-Drawable* rectfill(Drawable* this, float x1, float y1, float width, float height);
-Drawable* circlefill(Drawable* this, float x1, float y1, float r);
-//Drawable* rectstroke(Drawable* this, float x1, float y1, float width, float height);
-//Drawable* circlestroke(Drawable* this, float x1, float y1, float r);
+void Drawable_end(Drawable* obj);
 
-void end(Drawable* this);
+#ifdef __cplusplus
+}
+#endif
 
 typedef struct SContainer Container;
 
@@ -109,9 +111,17 @@ struct SCanvas {
     //float alalay;
 };
 
-void createCanvas(Canvas* this);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void canvasInit(Canvas* canvas);
-void resize(Canvas* this, int xscreen, int yscreen, int w, int h);
+void createCanvas(Canvas* obj);
+
+void Canvas_init(Canvas* obj);
+void Canvas_resize(Canvas* obj, int xscreen, int yscreen, int w, int h);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //COMPASS_CANVAS_H

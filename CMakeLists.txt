@@ -5,6 +5,12 @@ project(reindeer2d)
 set(USE_GLES false CACHE BOOL "use gles")
 set(USE_EGL false CACHE BOOL "use egl")
 
+if (ANDROID_NDK)
+    set(USE_GLES true)
+    set(USE_EGL true)
+    set(ANDROID_NDK_SRC ${ANDROID_NDK}/sources)
+endif()
+
 set(RDR_SRC
     src/Canvas.c
     src/Container.c
@@ -45,6 +51,8 @@ if (ANDROID_NDK)
         SHARED
         examples/android-example.cpp
     )
+    target_include_directories(reindeer2d-example PUBLIC
+        ${ANDROID_NDK_SRC}/android/native_app_glue)
     target_link_libraries(reindeer2d-example
         reindeer2d
         android

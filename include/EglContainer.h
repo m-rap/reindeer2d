@@ -23,21 +23,27 @@
 
 #include "Container.h"
 
-struct EglContainer {
-	Container parent;
-	
+typedef struct SEglContainer EglContainer;
+
+struct SEglContainer {
+    Container base;
+
     EGLSurface surface;
     EGLContext context;
     EGLDisplay display;
     EGLNativeWindowType window;
     //android_app* app;
-    
-    int init();
-    int deinit();
-    void swapBuffers();
 };
 
-void EglContainer_construct(EglContainer& eglContainer);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void createEglContainer(EglContainer* container, EGLNativeWindowType window);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

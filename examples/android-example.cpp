@@ -5,27 +5,32 @@
 #include "EglContainer.h"
 #include <string.h>
 #include <dlfcn.h>
+#include <math.h>
+#include <android_native_app_glue.h>
 
-struct EglContainer container;
-struct Drawable* compass = NULL;
+EglContainer container;
+Drawable* compass = NULL;
 
-void constructDraw(struct EglContainer* container1) {
-    Drawable& canvas = *(Drawable*)&container1->canvas;
-    container.s1px = 1 / ((struct Canvas*)&canvas)->small;
-    float s1px = container.s1px;
+void constructDraw(Container* container1) {
+    Drawable* canvas = (Drawable*)&container1->canvas;
+    container1->s1px = 1 / ((Canvas*)canvas->derived)->small;
+    float s1px = container1->s1px;
     //float linewidth = 10 * s1px;
     float linewidth = 0.01;
     LOGI("s1px %f linewidth %f", s1px, linewidth);
 
-    canvas.setColor(50, 50, 50, 255);
-    canvas.circlefill(0, 0, 0.83);
+    Drawable_setColor(canvas, 50, 50, 50, 255);
+    Drawable_circlefill(canvas, 0, 0, 0.83);
 
-    compass = canvas.addchild();
-    canvas.setColor(255, 255, 255, 255);
-    Drawable* circ1 = compass->circlefill(0, 0, 0.7);
-    canvas.setColor(0, 0, 0, 255);
-    Drawable* circ2 = compass->circlefill(0, 0, 0.7 - linewidth);
-    canvas.setColor(255, 255, 255, 255);
+    compass = Drawable_addchild(canvas);
+
+    Drawable_setColor(canvas, 255, 255, 255, 255);
+    Drawable* circ1 = Drawable_circlefill(compass, 0, 0, 0.7);
+    
+    Drawable_setColor(canvas, 0, 0, 0, 255);
+    Drawable* circ2 = Drawable_circlefill(compass, 0, 0, 0.7 - linewidth);
+    
+    Drawable_setColor(canvas, 255, 255, 255, 255);
 
     float needleLength = 0.05;
     //float needleRadius = 0.7 - 35 * s1px;
@@ -48,40 +53,40 @@ void constructDraw(struct EglContainer* container1) {
         }
 
         float x = (float)(cos(radians) * r), y = (float)(sin(radians) * r);
-        Drawable* needle = compass->rectfill(x, y, nl, linewidth);
+        Drawable* needle = Drawable_rectfill(compass, x, y, nl, linewidth);
 
         if (degree == 90) {
-            canvas.setColor(10, 200, 10, 255);
+            Drawable_setColor(canvas, 10, 200, 10, 255);
         }
+
         float xOuter = (float)(cos(radians) * (r + 0.11)), yOuter = (float)(sin(radians) * (r + 0.11));
-        Drawable* needleOuter = canvas.rectfill(xOuter, yOuter, nl, linewidth);
+        Drawable* needleOuter = Drawable_rectfill(canvas, xOuter, yOuter, nl, linewidth);
         if (degree == 90) {
-            canvas.setColor(255, 255, 255, 255);
+            Drawable_setColor(canvas, 255, 255, 255, 255);
         }
 
         needle->rotation = degree;
         needleOuter->rotation = degree;
     }
 
-    canvas.setColor(255, 0, 0, 255);
-    Drawable* hand = compass->addchild();
+    Drawable_setColor(canvas, 255, 0, 0, 255);
+    Drawable* hand = Drawable_addchild(compass);
     float handHeight = 0.1;
     float handWidth = 0.08;
     float handRadius = 0.7 - 0.25;
 
     hand->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * 3);
     hand->idxBuffer = (GLushort *)malloc(sizeof(GLushort) * 3);
-    hand->addVtx(0, handRadius);
-    hand->addVtx(handWidth / 2, handRadius - handHeight);
-    hand->addVtx(-handWidth / 2, handRadius - handHeight);
-    //hand->addVtx(0, -handRadius);
+    Drawable_addVtx(hand, 0, handRadius);
+    Drawable_addVtx(hand, handWidth / 2, handRadius - handHeight);
+    Drawable_addVtx(hand, -handWidth / 2, handRadius - handHeight);
+    
     int tr1[] = {0, 2, 1};
-    //int tr2[] = {1, 2, 3};
-    hand->addTriangle(tr1);
-    //hand->addTriangle(tr2);
+    Drawable_addTriangle(hand, tr1);
+    
     hand->mode = GL_TRIANGLES;
 
-    canvas.end();
+    Drawable_end(canvas);
 }
 
 void engine_handle_cmd(struct android_app* app, int32_t cmd) {
@@ -90,25 +95,25 @@ void engine_handle_cmd(struct android_app* app, int32_t cmd) {
         return;
     }
     EglContainer* container1 = (EglContainer*)app->userData;
-    JNIEnv* env = container1->env;
-    jmethodID metIdShowUi = container1->metIdShowUi;
+    Container* container12 = (Container*)container1;
+    
     switch (cmd) {
         case APP_CMD_SAVE_STATE:
             break;
         case APP_CMD_INIT_WINDOW:
             if (container1->window != NULL) {
-                container1->init();
-                constructDraw(container1);
+                Container_init(container12);
+                constructDraw(container12);
             }
             break;
         case APP_CMD_TERM_WINDOW:
-            container1->deinitEgl();
+            Container_deinit(container12);
             break;
         case APP_CMD_GAINED_FOCUS:
-            container1->animating = true;
+            container12->animating = true;
             break;
         case APP_CMD_LOST_FOCUS:
-            container1->animating = false;
+            container12->animating = false;
             break;
         default:
             break;
@@ -123,11 +128,7 @@ void android_main(struct android_app* state) {
     timeval start;
     gettimeofday(&start, NULL);
 
-    container.running = false;
-    container.animating = false;
-    container.s1px = 0;
-
-    container.window = state->window;
+    createEglContainer(&container, state->window);
 
     state->userData = &container;
     state->onAppCmd = engine_handle_cmd;
@@ -135,6 +136,7 @@ void android_main(struct android_app* state) {
     int fps = 0;
 
     LOGI("to loop");
+    Container& container2 = *((Container*)&container);
 
     while (true) {
         int ident;
@@ -161,7 +163,7 @@ void android_main(struct android_app* state) {
 
             if (state->destroyRequested != 0) {
                 LOGI("destroyRequested");
-                container.deinit();
+                Container_deinit(&container2);
                 break;
             }
         }
@@ -177,9 +179,9 @@ void android_main(struct android_app* state) {
             fps = 0;
         }
 
-        if (container.running && container.animating) {
+        if (container2.running && container2.animating) {
             compass->rotation += 0.01;
-            container.draw();
+            Container_draw(&container2);
         }
 
         fps++;

@@ -3,33 +3,37 @@
 //
 
 #include "EglContainer.h"
+#include <string.h>
 
+int _EglContainer_init(Container* obj);
 
-int EglContainer_init(Container* container) {
-	((EglContainer*)container->derivedObj)->init();
+int _EglContainer_deinit(Container* obj);
+
+void _EglContainer_swapBuffers(Container* obj);
+
+void createEglContainer(EglContainer* container, EGLNativeWindowType window) {
+    if (container == NULL) {
+        return;
+    }
+
+    memset(container, 0, sizeof(EglContainer));
+
+    createContainer(&container->base);
+
+    container->window = window;
+    container->display = EGL_NO_DISPLAY;
+    container->context = EGL_NO_CONTEXT;
+    container->surface = EGL_NO_SURFACE;
+
+    container->base.derived = container;
+    container->base.init = _EglContainer_init;
+    container->base.deinit = _EglContainer_deinit;
+    container->base.swapBuffers = _EglContainer_swapBuffers;
 }
 
-int EglContainer_deinit(Container* container) {
-	((EglContainer*)container->derivedObj)->deinit();
-}
-
-void EglContainer_swapBuffers(Container* container) {
-	((EglContainer*)container->derivedObj)->swapBuffers();
-}
-
-
-void EglContainer_construct(EglContainer& eglContainer) {
-	Container_construct(eglContainer.parent);
-	eglContainer.parent.derivedObj = &eglContainer;
-	eglContainer.parent.init = EglContainer_init;
-	eglContainer.parent.deinit = EglContainer_deinit;
-	eglContainer.parent.swapBuffers = EglContainer_swapBuffers;
-}
-
-
-
-int EglContainer::initEgl() {
+int _EglContainer_init(Container* obj) {
     LOGI("initEgl");
+    EglContainer* obj2 = (EglContainer*)obj->derived;
 
     const EGLint attribs[] = {
             EGL_SURFACE_TYPE,    EGL_WINDOW_BIT,
@@ -89,7 +93,7 @@ int EglContainer::initEgl() {
     }
 
     eglGetConfigAttrib(display, config, EGL_NATIVE_VISUAL_ID, &format);
-    surface = eglCreateWindowSurface(display, config, window, NULL);
+    surface = eglCreateWindowSurface(display, config, obj2->window, NULL);
     context = eglCreateContext(display, config, NULL, NULL);
 
     if (eglMakeCurrent(display, surface, surface, context) == EGL_FALSE) {
@@ -105,51 +109,55 @@ int EglContainer::initEgl() {
     LOGI("OpenGL Info: %s", glGetString(GL_VERSION));
     LOGI("OpenGL Info: %s", glGetString(GL_EXTENSIONS));
 
-    width = w;
-    height = h;
-    this->display = display;
-    this->surface = surface;
-    this->context = context;
+    obj->width = w;
+    obj->height = h;
+    obj2->display = display;
+    obj2->surface = surface;
+    obj2->context = context;
 
-    LOGI("w %d h %d", width, height);
+    LOGI("w %d h %d", obj->width, obj->height);
 
-    canvas.container = this;
-    canvas.init();
-    canvas.resize(0, 0, w, h);
+    obj->canvas.container = obj;
+    Canvas_init(&obj->canvas);
+    Canvas_resize(&obj->canvas, 0, 0, w, h);
 
-    running = true;
+    obj->running = 1;
 
     LOGI("initEgl done");
 
     return 0;
 }
 
-int EglContainer::deinitEgl() {
-    LOGI("deinitEgl %d", running);
-    if (!running) {
+int _EglContainer_deinit(Container* obj) {
+    LOGI("deinitEgl %d", obj->running);
+
+    EglContainer* obj2 = (EglContainer*)obj->derived;
+
+    if (!obj->running) {
         return 0;
     }
-    running = false;
-    animating = false;
+    obj->running = 0;
+    obj->animating = 0;
 
-    canvas.deinit();
+    Drawable_deinit((Drawable*)&obj->canvas);
 
-    eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    if (context != EGL_NO_CONTEXT) {
-        eglDestroyContext(display, context);
+    eglMakeCurrent(obj2->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    if (obj2->context != EGL_NO_CONTEXT) {
+        eglDestroyContext(obj2->display, obj2->context);
     }
-    if (surface != EGL_NO_SURFACE) {
-        eglDestroySurface(display, surface);
+    if (obj2->surface != EGL_NO_SURFACE) {
+        eglDestroySurface(obj2->display, obj2->surface);
     }
-    eglTerminate(display);
+    eglTerminate(obj2->display);
 
-    display = EGL_NO_DISPLAY;
-    context = EGL_NO_CONTEXT;
-    surface = EGL_NO_SURFACE;
+    obj2->display = EGL_NO_DISPLAY;
+    obj2->context = EGL_NO_CONTEXT;
+    obj2->surface = EGL_NO_SURFACE;
 
     return 0;
 }
 
-void EglContainer::swapBuffers() {
-    eglSwapBuffers(display, surface);
+void _EglContainer_swapBuffers(Container* obj) {
+    EglContainer* obj2 = (EglContainer*)obj->derived;
+    eglSwapBuffers(obj2->display, obj2->surface);
 }
