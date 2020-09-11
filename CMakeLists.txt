@@ -73,29 +73,29 @@ if (ANDROID_NDK)
     )
 
 
-    #add_library(reindeer2d-cpp-example
-    #    SHARED
-    #    cpp/src/Canvas.cpp
-    #    cpp/src/Container.cpp
-    #    cpp/src/EglContainer.cpp
-    #    examples/android-example.cpp
-    #    ${ANDROID_NDK_SRC}/android/native_app_glue/android_native_app_glue.c
-    #)
-    #target_include_directories(reindeer2d-cpp-example PUBLIC
-    #    ${ANDROID_NDK_SRC}/android/native_app_glue
-    #    cpp/include)
-    #target_link_libraries(reindeer2d-cpp-example
-    #    android
-    #    EGL
-    #    GLESv1_CM
-    #    log
-    #)
-    #set_target_properties(reindeer2d-cpp-example
-    #    PROPERTIES COMPILE_FLAGS "${RDR_CFLAGS}"
-    #)
-    #set_target_properties(reindeer2d-cpp-example
-    #    PROPERTIES LINK_FLAGS "${EXAMPLE_LINK_FLAGS}"
-    #)
+    add_library(reindeer2d-cpp-example
+        SHARED
+        cpp/src/Canvas.cpp
+        cpp/src/Container.cpp
+        cpp/src/EglContainer.cpp
+        examples/android-example.cpp
+        ${ANDROID_NDK_SRC}/android/native_app_glue/android_native_app_glue.c
+    )
+    target_include_directories(reindeer2d-cpp-example PUBLIC
+        ${ANDROID_NDK_SRC}/android/native_app_glue
+        cpp/include)
+    target_link_libraries(reindeer2d-cpp-example
+        android
+        EGL
+        GLESv1_CM
+        log
+    )
+    set_target_properties(reindeer2d-cpp-example
+        PROPERTIES COMPILE_FLAGS "${RDR_CFLAGS}"
+    )
+    set_target_properties(reindeer2d-cpp-example
+        PROPERTIES LINK_FLAGS "${EXAMPLE_LINK_FLAGS}"
+    )
 
 
     add_library(reindeer2d-cpp2-example

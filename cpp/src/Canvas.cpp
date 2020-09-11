@@ -22,7 +22,7 @@ GLushort nSegments = 200;
 ////void _circlestroke(Drawable* this, float x, float y, float r);
 
 
-void Drawable::Drawable() {
+Drawable::Drawable() {
 }
 
 void Drawable::deinit() {
@@ -72,12 +72,12 @@ void Drawable::init(Drawable* parent1) {
         }
         tmp = tmp->parent;
     }
-    Drawable_setColor(this, this->canvas->r, this->canvas->g, this->canvas->b, this->canvas->a);
+    this->setColor(this->canvas->r, this->canvas->g, this->canvas->b, this->canvas->a);
     //this->lineWidth = this->canvas->lineWidth;
 }
 
 void Drawable::draw() {
-    //LOGI("inside _Drawable_draw %x %d", this, this->childrenCount);
+    //LOGI("inside _fds->draw %x %d", this, this->childrenCount);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
@@ -147,10 +147,10 @@ void Drawable::addTriangle(int* idx) {
 
 void _rectvtx(Drawable* that, float x1, float y1, float width, float height) {
     //LOGI("_rectvtx");
-    this->x = x1;
-    this->y = y1;
+    that->x = x1;
+    that->y = y1;
 
-    this->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * 4);
+    that->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * 4);
 
     that->addVtx(-width / 2, -height / 2);
     that->addVtx(width / 2, -height / 2);
@@ -165,7 +165,7 @@ void _circlevtx(Drawable* that, float x1, float y1, float radius) {
 
     that->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * (nSegments + 1));
 
-    that->addVtx(that, 0, 0);
+    that->addVtx(0, 0);
     for (int i = 0; i < nSegments; i++) {
         double degree = (double)(i * 360) / nSegments;
         double radians = degree * M_PI / 180;
@@ -256,13 +256,13 @@ Drawable* Drawable::circlefill(float x1, float y1, float radius) {
 }
 
 //Drawable* Drawable::rectstroke(float x1, float y1, float width, float height) {
-//    Drawable* d = Drawable_addchild();
+//    Drawable* d = fds->addchild();
 //    d->_rectstroke(x1, y1, width, height);
 //    return d;
 //}
 //
 //Drawable* Drawable::circlestroke(float x1, float y1, float radius) {
-//    Drawable* d = Drawable_addchild();
+//    Drawable* d = fds->addchild();
 //    d->_circlestroke(x1, y1, radius);
 //    return d;
 //}
@@ -279,7 +279,7 @@ void Drawable::end() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     for (int i = 0; i < this->childrenCount; i++) {
-        this->childrend[i]->end();
+        this->children[i]->end();
     }
 }
 
@@ -315,7 +315,7 @@ void Canvas::draw() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
-void Canvas::Canvas() : Drawable() {
+Canvas::Canvas() : Drawable() {
 }
 
 void Canvas::resize(int xscreen1, int yscreen1, int w, int h) {

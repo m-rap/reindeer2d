@@ -11,8 +11,8 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
-                arguments "-DUSE_GLES=true -DUSE_EGL=true"
-                //arguments "-DANDROID_STL=c++_shared"
+                //arguments "-DUSE_GLES=true -DUSE_EGL=true -DANDROID_STL=c++_shared"
+                arguments "-DANDROID_STL=c++_shared"
                 cppFlags ""
             }
         }

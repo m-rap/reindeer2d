@@ -23,9 +23,7 @@
 
 #include "Container.h"
 
-struct EglContainer {
-    Container base;
-
+struct EglContainer : public Container {
     EGLSurface surface;
     EGLContext context;
     EGLDisplay display;
@@ -34,6 +32,10 @@ struct EglContainer {
     //android_app* app;
 
     EglContainer(void* extData);
+
+    virtual int init();
+    virtual int deinit();
+    virtual void swapBuffers();
 };
 
 #endif

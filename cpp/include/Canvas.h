@@ -42,7 +42,7 @@ struct Vertex2 {
     unsigned char r, g, b, a;
 };
 
-struct SDrawable {
+struct Drawable {
     void* derived;
 
     GLenum mode;
@@ -83,7 +83,7 @@ struct SDrawable {
     void end();
 };
 
-Container Container;
+struct Container;
 
 struct Canvas : public Drawable {
     Container* container;

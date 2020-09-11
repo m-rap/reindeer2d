@@ -5,24 +5,12 @@
 #include "Container.h"
 #include <string.h>
 
-void Container::Container() {
+Container::Container() {
 }
 
 void Container::draw() {
     //LOGI("inside Container_draw, container: %x canvas: %x", this, &this->canvas);
     this->canvas.draw();
 
-    this->swapBuffers();
-}
-
-void init() {
-    this->init();
-}
-
-void deinit() {
-    this->deinit();
-}
-
-void swapBuffers() {
     this->swapBuffers();
 }

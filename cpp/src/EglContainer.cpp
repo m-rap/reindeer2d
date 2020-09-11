@@ -5,11 +5,11 @@
 #include "EglContainer.h"
 #include <string.h>
 
-void EglContainer::EglContainer(void* extData) : Container() {
-    container->extData = extData;
-    container->display = EGL_NO_DISPLAY;
-    container->context = EGL_NO_CONTEXT;
-    container->surface = EGL_NO_SURFACE;
+EglContainer::EglContainer(void* extData) : Container() {
+    this->extData = extData;
+    this->display = EGL_NO_DISPLAY;
+    this->context = EGL_NO_CONTEXT;
+    this->surface = EGL_NO_SURFACE;
 }
 
 int EglContainer::init() {
@@ -98,8 +98,8 @@ int EglContainer::init() {
     LOGI("w %d h %d", this->width, this->height);
 
     this->canvas.container = this;
-    this->canvas->init();
-    this->canvas->resize(0, 0, w, h);
+    this->canvas.init();
+    this->canvas.resize(0, 0, w, h);
 
     this->running = 1;
 
@@ -117,7 +117,7 @@ int EglContainer::deinit() {
     this->running = 0;
     this->animating = 0;
 
-    this->canvas->deinit();
+    this->canvas.deinit();
 
     eglMakeCurrent(this->display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
     if (this->context != EGL_NO_CONTEXT) {

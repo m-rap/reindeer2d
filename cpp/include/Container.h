@@ -20,8 +20,6 @@
 #include "Canvas.h"
 
 struct Container {
-    void* derived;
-
     uint8_t running;
     uint8_t animating;
     int width, height;
@@ -29,12 +27,12 @@ struct Container {
     Canvas canvas;
     float s1px;
 
-    Container
+    Container();
 
     void draw();
-    virtual void init();
-    virtual void deinit();
-    virtual void swapBuffers();
+    virtual int init() = 0;
+    virtual int deinit() = 0;
+    virtual void swapBuffers() = 0;
 };
 
 #endif //COMPASS_CONTAINER_H
