@@ -49,7 +49,6 @@ set_target_properties(reindeer2d
 if (ANDROID_NDK)
     add_library(reindeer2d-example
         SHARED
-        #examples/android-example.cpp
         examples/android-example.c
         ${ANDROID_NDK_SRC}/android/native_app_glue/android_native_app_glue.c
     )
@@ -70,6 +69,28 @@ if (ANDROID_NDK)
     set(EXAMPLE_LINK_FLAGS "-u ANativeActivity_onCreate")
 
     set_target_properties(reindeer2d-example
+        PROPERTIES LINK_FLAGS "${EXAMPLE_LINK_FLAGS}"
+    )
+
+
+    add_library(reindeer2d-cpp-example
+        SHARED
+        examples/android-example.cpp
+        ${ANDROID_NDK_SRC}/android/native_app_glue/android_native_app_glue.c
+    )
+    target_include_directories(reindeer2d-cpp-example PUBLIC
+        ${ANDROID_NDK_SRC}/android/native_app_glue)
+    target_link_libraries(reindeer2d-cpp-example
+        reindeer2d
+        android
+        EGL
+        GLESv1_CM
+        log
+    )
+    set_target_properties(reindeer2d-cpp-example
+        PROPERTIES COMPILE_FLAGS "${RDR_CFLAGS}"
+    )
+    set_target_properties(reindeer2d-cpp-example
         PROPERTIES LINK_FLAGS "${EXAMPLE_LINK_FLAGS}"
     )
 endif()
