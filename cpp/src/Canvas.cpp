@@ -77,7 +77,7 @@ void Drawable::init(Drawable* parent1) {
 }
 
 void Drawable::draw() {
-    //LOGI("inside _fds->draw %x %d", this, this->childrenCount);
+    //LOGI("inside Drawable::draw %x %d", this, this->childrenCount);
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
 
@@ -104,6 +104,7 @@ void Drawable::draw() {
     }
 
     for (int i = 0; i < this->childrenCount; i++) {
+        //LOGI("children %x draw", this->children[i]);
         this->children[i]->draw();
     }
 
@@ -269,7 +270,7 @@ Drawable* Drawable::circlefill(float x1, float y1, float radius) {
 
 void Drawable::end() {
     //LOGI("taken %d", takenDrawableCount);
-    LOGI("bufferdata %d %d", this->vtxBuffSize, this->idxBuffSize);
+    LOGI("bufferdata %d %d %d %d", this->vbo, this->ibo, this->vtxBuffSize, this->idxBuffSize);
     glBindBuffer(GL_ARRAY_BUFFER, this->vbo);
     glBufferData(GL_ARRAY_BUFFER, this->vtxBuffSize * sizeof(Vertex2), this->vtxBuffer, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -284,7 +285,8 @@ void Drawable::end() {
 }
 
 void Canvas::init() {
-    drawablePool = (Drawable*)malloc(sizeof(Drawable) * 1024);
+    //drawablePool = (Drawable*)malloc(sizeof(Drawable) * 1024);
+    drawablePool = new Drawable[1024];
 
     LOGI("canvas init");
     Drawable::init(NULL);
@@ -300,7 +302,8 @@ void Canvas::deinit() {
     Drawable::deinit();
     takenDrawableCount = 0;
 
-    free(drawablePool);
+    //free(drawablePool);
+    delete[] drawablePool;
 }
 
 void Canvas::draw() {
