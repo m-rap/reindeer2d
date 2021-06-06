@@ -43,32 +43,43 @@ typedef struct SVertex2 {
 } Vertex2;
 
 typedef struct SDrawable Drawable;
+typedef struct SNode Node;
 
 struct SDrawable {
-    void* derived;
-
     GLenum mode;
     Vertex2* vtxBuffer;
     GLushort* idxBuffer;
     GLushort vtxBuffSize;
     GLushort idxBuffSize;
     unsigned char r, g, b, a;
-    float x, y;
-    float rotation;
-    float scale;
     GLuint vbo;
     GLuint ibo;
     uint8_t initialized;
     //float lineWidth;
-
-    Drawable* canvas;
-    Drawable* parent;
-    Drawable* children[1024];
-    int childrenCount;
-
     
+    Node* owner;
+ 
     void (*deinit)(Drawable* obj);
     void (*draw)(Drawable* obj);
+};
+
+struct SNode {
+    void* derived;
+    Drawable* drawables[1024];
+    Node* parent;
+    Node* children[1024];
+    uint8_t initialized;
+    int drawablesCount;
+    int childrenCount;
+    unsigned char r, g, b, a;
+    float x, y;
+    float rotation;
+    float scale;
+
+    Node* canvas;
+
+    void (*deinit)(Node* obj);
+    void (*draw)(Node* obj);
 };
 
 #ifdef __cplusplus
@@ -77,19 +88,28 @@ extern "C" {
 
 void createDrawable(Drawable* obj);
 
-void Drawable_init(Drawable* obj, Drawable* parent);
+void Drawable_init(Drawable* obj, Node* owner);
 void Drawable_deinit(Drawable* obj);
 void Drawable_draw(Drawable* obj);
 
-void Drawable_setColor(Drawable* obj, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 void Drawable_addVtx(Drawable* obj, float x, float y);
 void Drawable_addTriangle(Drawable* obj, int* idx);
 
-Drawable* Drawable_addchild(Drawable* obj);
-Drawable* Drawable_rectfill(Drawable* obj, float x1, float y1, float width, float height);
-Drawable* Drawable_circlefill(Drawable* obj, float x1, float y1, float r);
+void createNode(Node* obj);
+
+void Node_init(Node* obj, Node* parent);
+void Node_deinit(Node* obj);
+void Node_draw(Node* obj);
+
+void Node_setColor(Node* obj, unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+Node* Node_addChild(Node* obj);
+Drawable* Node_addDrawable(Node* obj);
+void Node_rectfill(Node* obj, float x1, float y1, float width, float height);
+void Node_circlefill(Node* obj, float x1, float y1, float r);
 //Drawable* Drawable_rectstroke(Drawable* obj, float x1, float y1, float width, float height);
 //Drawable* Drawable_circlestroke(Drawable* obj, float x1, float y1, float r);
+void Node_putText(Node* obj, float x, float y, int alignment);
+void Node_end(Node* obj);
 
 void Drawable_end(Drawable* obj);
 
@@ -102,7 +122,7 @@ typedef struct SContainer Container;
 typedef struct SCanvas Canvas;
 
 struct SCanvas {
-    Drawable base;
+    Node base;
 
     Container* container;
 

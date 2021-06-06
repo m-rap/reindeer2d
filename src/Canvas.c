@@ -11,6 +11,9 @@
 
 Drawable* drawablePool;
 int takenDrawableCount = 0;
+
+Node* nodePool;
+int takenNodeCount;
 GLushort nSegments = 200;
 
 
@@ -36,53 +39,45 @@ void _Drawable_deinit(Drawable* obj) {
         }
         glDeleteBuffers(1, &obj->vbo);
         glDeleteBuffers(1, &obj->ibo);
-
-        for (int i = 0; i < obj->childrenCount; i++) {
-            obj->children[i]->deinit(obj->children[i]);
-        }
-        obj->childrenCount = 0;
     }
 }
 
-void Drawable_init(Drawable* obj, Drawable* parent1) {
+void _Node_deinit(Node* obj) {
+    for (int i = 0; i < obj->childrenCount; i++) {
+        obj->children[i]->deinit(obj->children[i]);
+    }
+
+    for (int i = 0; i < obj->drawablesCount; i++) {
+        Drawable_deinit(obj->drawables[i]);
+    }
+}
+
+void Drawable_setColor(Drawable* obj, unsigned char r1, unsigned char g1, unsigned char b1, unsigned char a1) {
+    //LOGI("Drawable %x color: %d,%d,%d,%d", obj, r1, g1, b1, a1);
+    obj->r = r1;
+    obj->g = g1;
+    obj->b = b1;
+    obj->a = a1;
+}
+
+void Drawable_init(Drawable* obj, Node* owner) {
     //LOGI("drawable init");
     obj->initialized = 1;
-
-    obj->childrenCount = 0;
 
     glGenBuffers(1, &obj->vbo);
     glGenBuffers(1, &obj->ibo);
 
     obj->vtxBuffSize = 0;
     obj->idxBuffSize = 0;
-    obj->x = 0;
-    obj->y = 0;
-    obj->rotation = 0;
-    obj->scale = 1;
     //obj->lineWidth = 1;
-    obj->parent = parent1;
+    obj->owner = owner;
 
-    Drawable* tmp = obj;
-    while (tmp != NULL) {
-        if (tmp->parent == NULL) {
-            obj->canvas = tmp;
-            break;
-        }
-        tmp = tmp->parent;
-    }
-    Drawable_setColor(obj, obj->canvas->r, obj->canvas->g, obj->canvas->b, obj->canvas->a);
+    Drawable_setColor(obj, owner->r, owner->g, owner->b, owner->a);
     //obj->lineWidth = obj->canvas->lineWidth;
 }
 
 void _Drawable_draw(Drawable* obj) {
     //LOGI("inside _Drawable_draw %x %d", obj, obj->childrenCount);
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-
-    glTranslatef(obj->x, obj->y, 0);
-    glRotatef(obj->rotation, 0, 0, 1);
-    glScalef(obj->scale, obj->scale, obj->scale);
-
     if (obj->idxBuffSize > 0) {
         //LOGI("drawing buffer %d", obj->vbo);
 
@@ -100,6 +95,19 @@ void _Drawable_draw(Drawable* obj) {
         glDisableClientState(GL_VERTEX_ARRAY);
         glDisableClientState(GL_COLOR_ARRAY);
     }
+}
+
+void _Node_draw(Node* obj) {
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+
+    glTranslatef(obj->x, obj->y, 0);
+    glRotatef(obj->rotation, 0, 0, 1);
+    glScalef(obj->scale, obj->scale, obj->scale);
+
+    for (int i = 0; i < obj->drawablesCount; i++) {
+        obj->drawables[i]->draw(obj->drawables[i]);
+    }
 
     for (int i = 0; i < obj->childrenCount; i++) {
         obj->children[i]->draw(obj->children[i]);
@@ -109,13 +117,13 @@ void _Drawable_draw(Drawable* obj) {
     glPopMatrix();
 }
 
-void createDrawable(Drawable* obj) {
+void createNode(Node* obj) {
     if (obj == NULL)
         return;
     
-    memset(obj, 0, sizeof(Drawable));
-    obj->deinit = _Drawable_deinit;
-    obj->draw = _Drawable_draw;
+    memset(obj, 0, sizeof(Node));
+    obj->deinit = _Node_deinit;
+    obj->draw = _Node_draw;
 }
 
 void Drawable_deinit(Drawable* obj) {
@@ -126,7 +134,35 @@ void Drawable_draw(Drawable* obj) {
     obj->draw(obj);
 }
 
-void Drawable_setColor(Drawable* obj, unsigned char r1, unsigned char g1, unsigned char b1, unsigned char a1) {
+void Node_init(Node* obj, Node* parent) {
+    obj->x = 0;
+    obj->y = 0;
+    obj->rotation = 0;
+    obj->scale = 1;
+
+    obj->parent = parent;
+
+    Node* tmp = obj;
+    while (tmp != NULL) {
+        if (tmp->parent == NULL) {
+            obj->canvas = tmp;
+            break;
+        }
+        tmp = tmp->parent;
+    }
+    Node_setColor(tmp, tmp->r, tmp->g, tmp->b, tmp->a);
+}
+
+void Node_deinit(Node* obj) {
+    if (obj->initialized) {
+        for (int i = 0; i < obj->childrenCount; i++) {
+            obj->children[i]->deinit(obj->children[i]);
+        }
+        obj->childrenCount = 0;
+    }
+}
+
+void Node_setColor(Node* obj, unsigned char r1, unsigned char g1, unsigned char b1, unsigned char a1) {
     //LOGI("Drawable %x color: %d,%d,%d,%d", obj, r1, g1, b1, a1);
     obj->r = r1;
     obj->g = g1;
@@ -159,23 +195,19 @@ void Drawable_addTriangle(Drawable* obj, int* idx) {
     obj->idxBuffer[obj->idxBuffSize++] = idx[2];
 }
 
-void _rectvtx(Drawable* obj, float x1, float y1, float width, float height) {
+void _rectvtx(Drawable* obj, float x, float y, float width, float height) {
     //LOGI("_rectvtx");
-    obj->x = x1;
-    obj->y = y1;
 
     obj->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * 4);
 
-    Drawable_addVtx(obj, -width / 2, -height / 2);
-    Drawable_addVtx(obj, width / 2, -height / 2);
-    Drawable_addVtx(obj, width / 2, height / 2);
-    Drawable_addVtx(obj, -width / 2, height / 2);
+    Drawable_addVtx(obj, x - width / 2, y - height / 2);
+    Drawable_addVtx(obj, x + width / 2, y - height / 2);
+    Drawable_addVtx(obj, x + width / 2, y + height / 2);
+    Drawable_addVtx(obj, x - width / 2, y + height / 2);
 }
 
 void _circlevtx(Drawable* obj, float x1, float y1, float radius) {
     //LOGI("_circlevtx");
-    obj->x = x1;
-    obj->y = y1;
 
     obj->vtxBuffer = (Vertex2*)malloc(sizeof(Vertex2) * (nSegments + 1));
 
@@ -183,7 +215,7 @@ void _circlevtx(Drawable* obj, float x1, float y1, float radius) {
     for (int i = 0; i < nSegments; i++) {
         double degree = (double)(i * 360) / nSegments;
         double radians = degree * M_PI / 180;
-        Drawable_addVtx(obj, (float)(cos(radians) * radius), (float)(sin(radians) * radius));
+        Drawable_addVtx(obj, (float)(x1 + cos(radians) * radius), (float)(y1 + sin(radians) * radius));
     }
 }
 
@@ -248,26 +280,34 @@ void _circlefill(Drawable* obj, float x1, float y1, float radius) {
 //    }
 //}
 
-Drawable* Drawable_addchild(Drawable* obj) {
+Drawable* Node_addDrawable(Node* obj) {
     if (takenDrawableCount >= 1024) {
         return NULL;
     }
-    Drawable* d = obj->children[obj->childrenCount++] = &drawablePool[takenDrawableCount++];
+    Drawable* d = obj->drawables[obj->drawablesCount++] = &drawablePool[takenDrawableCount++];
     createDrawable(d);
     Drawable_init(d, obj);
     return d;
 }
 
-Drawable* Drawable_rectfill(Drawable* obj, float x1, float y1, float width, float height) {
-    Drawable* d = Drawable_addchild(obj);
-    _rectfill(d, x1, y1, width, height);
-    return d;
+Node* Node_addChild(Node* obj) {
+    if (takenNodeCount >= 1024) {
+        return NULL;
+    }
+    Node* node = obj->children[obj->childrenCount++] = &nodePool[takenNodeCount++];
+    createNode(node);
+    Node_init(node, obj);
+    return node;
 }
 
-Drawable* Drawable_circlefill(Drawable* obj, float x1, float y1, float radius) {
-    Drawable* d = Drawable_addchild(obj);
+void Node_rectfill(Node* obj, float x1, float y1, float width, float height) {
+    Drawable* d = Node_addDrawable(obj);
+    _rectfill(d, x1, y1, width, height);
+}
+
+void Node_circlefill(Node* obj, float x1, float y1, float radius) {
+    Drawable* d = Node_addDrawable(obj);
     _circlefill(d, x1, y1, radius);
-    return d;
 }
 
 //Drawable* Drawable::rectstroke(float x1, float y1, float width, float height) {
@@ -282,6 +322,9 @@ Drawable* Drawable_circlefill(Drawable* obj, float x1, float y1, float radius) {
 //    return d;
 //}
 
+void Node_putText(Node* obj, float x1, float y1, int alignment) {
+}
+
 void Drawable_end(Drawable* obj) {
     //LOGI("taken %d", takenDrawableCount);
     LOGI("bufferdata %d %d", obj->vtxBuffSize, obj->idxBuffSize);
@@ -292,18 +335,26 @@ void Drawable_end(Drawable* obj) {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, obj->ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, obj->idxBuffSize * sizeof(GLushort), obj->idxBuffer, GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
 
+void Node_end(Node* obj) {
+    for (int i = 0; i < obj->drawablesCount; i++) {
+        Drawable_end(obj->drawables[i]);
+    }
+    
     for (int i = 0; i < obj->childrenCount; i++) {
-        Drawable_end(obj->children[i]);
+        Node_end(obj->children[i]);
     }
 }
 
 void Canvas_init(Canvas* obj) {
     drawablePool = (Drawable*)malloc(sizeof(Drawable) * 1024);
+    nodePool = (Node*)malloc(sizeof(Node) * 1024);
 
     LOGI("canvas init");
-    Drawable_init(&obj->base, NULL);
+    Node_init(&obj->base, NULL);
     takenDrawableCount = 0;
+    takenNodeCount = 0;
 
     //glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
     glEnable(GL_CULL_FACE);
@@ -311,20 +362,22 @@ void Canvas_init(Canvas* obj) {
     glDisable(GL_DEPTH_TEST);
 }
 
-void _Canvas_deinit(Drawable* obj) {
-    _Drawable_deinit(obj);
+void _Canvas_deinit(Node* obj) {
+    _Node_deinit(obj);
     takenDrawableCount = 0;
+    takenNodeCount = 0;
 
     free(drawablePool);
+    free(nodePool);
 }
 
-void _Canvas_draw(Drawable* obj) {
+void _Canvas_draw(Node* obj) {
     //LOGI("inside _Canvas_draw %x", obj);
 
     glClear(GL_COLOR_BUFFER_BIT);
     glClearColor(0, 0, 0, 0);
 
-    _Drawable_draw(obj);
+    _Node_draw(obj);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -335,7 +388,7 @@ void createCanvas(Canvas* canvas) {
         return;
     }
     memset(canvas, 0, sizeof(Canvas));
-    createDrawable(&canvas->base);
+    createNode(&canvas->base);
     canvas->base.derived = canvas;
     //canvas->base.init = Canvas_init;
     canvas->base.deinit = _Canvas_deinit;
